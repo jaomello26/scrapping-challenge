@@ -1,8 +1,11 @@
-venv/
 *.pyc
 __pycache__/
-
-\.env
-
-*.cache
 *.log
+.env
+
+node_modules/
+dist/
+.vite/
+
+*.env
+db_data/

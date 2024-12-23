@@ -33,4 +33,5 @@ def fetch_snapshot_data(snapshot_id):
         status = snapshot_data.get("status")
         
         print(f"Snapshot {snapshot_id} status: {status}")         
+        
         time.sleep(10) 
