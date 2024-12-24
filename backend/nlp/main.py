@@ -11,7 +11,7 @@ def analyze_reviews(formatted_data):
     analyzer = ReviewAnalyzer()
     return analyzer.process_reviews(formatted_data)
 
-def print_first_n_tags(tags, n=3):
+def print_first_n_tags(tags, n=5):
     """Print first n items from each tag category"""
     print("\nFirst", n, "Positive Tags:")
     for i, (phrase, info) in enumerate(tags['positive'].items()):
