@@ -17,3 +17,7 @@ def get_reviews(review_request: ReviewRequest):
             raise HTTPException(status_code=500, detail=f"Error fetching snapshot data: {str(e)}")
     
     raise HTTPException(status_code=500, detail="Failed to trigger the snapshot scraping process.")
+
+@router.get("/products")
+def get_products(keyword: str):
+    return {"data": "Hello World"}
