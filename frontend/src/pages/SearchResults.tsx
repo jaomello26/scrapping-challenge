@@ -1,97 +1,157 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { StarIcon } from "@radix-ui/react-icons"
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../components/ui/pagination"
 
-// Mock data for demonstration
-const mockResults = [
-  { id: 1, name: 'Product 1', price: '$19.99', rating: 4.5, reviews: 1234 },
-  { id: 2, name: 'Product 2', price: '$29.99', rating: 3.8, reviews: 567 },
-  { id: 3, name: 'Product 3', price: '$39.99', rating: 4.2, reviews: 890 },
-  { id: 4, name: 'Product 4', price: '$49.99', rating: 4.7, reviews: 432 },
-  { id: 5, name: 'Product 5', price: '$59.99', rating: 3.9, reviews: 654 },
-  { id: 6, name: 'Product 6', price: '$69.99', rating: 4.1, reviews: 987 },
-  { id: 7, name: 'Product 7', price: '$79.99', rating: 4.6, reviews: 210 },
-  { id: 8, name: 'Product 8', price: '$89.99', rating: 3.7, reviews: 543 },
-  { id: 9, name: 'Product 9', price: '$99.99', rating: 4.3, reviews: 876 }
-]
+export interface Product {
+  id: number;
+  name: string;
+  price: string;
+  rating: number;
+  reviews: number;
+}
+
+export interface ProductsResponse {
+  products: Product[];
+  totalPages: number;
+}
 
 const Results: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [results, setResults] = useState(mockResults)
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const itemsPerPage: number = 9
+
+  const { data, isLoading, error } = useQuery<ProductsResponse, Error>({
+    queryKey: ['products', currentPage, searchTerm],
+    queryFn: async (): Promise<ProductsResponse> => {
+      const searchQuery = searchTerm ? `&q=${searchTerm}` : ''
+      const response = await axios.get<Product[]>(
+        `http://localhost:3001/products?_page=${currentPage}&_limit=${itemsPerPage}${searchQuery}`
+      )
+      const total = parseInt(response.headers['x-total-count'] || '0')
+      return {
+        products: response.data,
+        totalPages: Math.ceil(total / itemsPerPage)
+      }
+    }
+  })
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const q = searchParams.get('q')
     if (q) {
       setSearchTerm(q)
-      // Here you would typically fetch results based on the search term
-      // For now, we'll just use the mock data
-      setResults(mockResults)
+      setCurrentPage(1)
     }
   }, [location.search])
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
+    setCurrentPage(1)
     navigate(`/results?q=${encodeURIComponent(searchTerm)}`)
   }
 
-  return (
-    <div className="space-y-6 py-6">
-      <motion.div
-        initial={{ y: 0 }}
-        animate={{ y: -30 }}
-        transition={{ duration: 0.7 }}
-      >
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8 max-w-md mx-auto">
-          <Input
-            type="text"
-            placeholder="Enter the product you want a review summary for"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit" className="bg-yellow-400 hover:bg-yellow-500 text-gray-900">
-            Search
-          </Button>
-        </form>
-      </motion.div>
+  const handlePageChange = (page: number): void => {
+    setCurrentPage(page)
+  }
 
-      <h1 className="text-3xl font-bold text-gray-900">Results for "{searchTerm}"</h1>
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <form onSubmit={handleSearch} className="flex gap-4">
+        <Input
+          type="text"
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+            setSearchTerm(e.target.value)
+          }
+          placeholder="Search products..."
+          className="flex-1"
+        />
+        <Button type="submit">Search</Button>
+      </form>
+
+      {/* Grid de produtos */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {results.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Link to={`/insights/${product.id}`}>
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle>{product.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-2">{product.price}</p>
-                  <div className="flex items-center mb-2">
-                    <StarIcon className="w-5 h-5 text-yellow-400 mr-1" />
-                    <span className="font-medium text-gray-900">{product.rating}</span>
-                    <span className="text-gray-600 ml-2">({product.reviews} reviews)</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
+        {data?.products.map((product: Product) => (
+          <Card key={product.id}>
+            <CardHeader>
+              <CardTitle>{product.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{product.price}</p>
+              <div className="flex items-center gap-2">
+                <span>Rating: {product.rating}</span>
+                <span>({product.reviews} reviews)</span>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">View Details</Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
+
+      {/* Paginação */}
+      {data?.totalPages && data.totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                aria-disabled={currentPage === 1}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  onClick={() => handlePageChange(page)}
+                  isActive={currentPage === page}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => handlePageChange(Math.min(currentPage + 1, data.totalPages))}
+                className={currentPage === data.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                aria-disabled={currentPage === data.totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
+
+      {/* Loading e Error states */}
+      {isLoading && (
+        <div className="flex justify-center">
+          <p>Loading...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="flex justify-center text-red-500">
+          <p>Error loading products: {error.message}</p>
+        </div>
+      )}
     </div>
   )
 }
 
 export default Results
-

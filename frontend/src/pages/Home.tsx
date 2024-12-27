@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 
+
 const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
@@ -35,7 +36,8 @@ const Home: React.FC = () => {
             <p className='text-center text-gray-600 text-sm mx-4 pb-4'>
           Search for an Amazon product or insert the URL link of the product to see the review summary.
             </p>
-        </CardDescription>
+        </CardDescription> 
+        
       </Card>
   )
 }
