@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 
 const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -15,21 +14,15 @@ const Home: React.FC = () => {
   }
 
   return (
-    <motion.div 
-      className="flex items-center justify-center min-h-[calc(100vh-80px)]"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Find Product Reviews</CardTitle>
-        </CardHeader>
+      <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+           <CardTitle className="text-3xl font-bold text-center">Amazon Reviews</CardTitle>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="space-y-4">
             <Input
               type="text"
-              placeholder="Enter the product you want a review summary for"
+              placeholder="Enter the product you want a review summary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -38,8 +31,12 @@ const Home: React.FC = () => {
             </Button>
           </form>
         </CardContent>
+        <CardDescription>
+            <p className='text-center text-gray-600 text-sm mx-4 pb-4'>
+          Search for an Amazon product or insert the URL link of the product to see the review summary.
+            </p>
+        </CardDescription>
       </Card>
-    </motion.div>
   )
 }
 

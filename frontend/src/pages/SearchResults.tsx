@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { StarIcon } from "@radix-ui/react-icons"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
 
 // Mock data for demonstration
 const mockResults = [
   { id: 1, name: 'Product 1', price: '$19.99', rating: 4.5, reviews: 1234 },
   { id: 2, name: 'Product 2', price: '$29.99', rating: 3.8, reviews: 567 },
   { id: 3, name: 'Product 3', price: '$39.99', rating: 4.2, reviews: 890 },
+  { id: 4, name: 'Product 4', price: '$49.99', rating: 4.7, reviews: 432 },
+  { id: 5, name: 'Product 5', price: '$59.99', rating: 3.9, reviews: 654 },
+  { id: 6, name: 'Product 6', price: '$69.99', rating: 4.1, reviews: 987 },
+  { id: 7, name: 'Product 7', price: '$79.99', rating: 4.6, reviews: 210 },
+  { id: 8, name: 'Product 8', price: '$89.99', rating: 3.7, reviews: 543 },
+  { id: 9, name: 'Product 9', price: '$99.99', rating: 4.3, reviews: 876 }
 ]
 
 const Results: React.FC = () => {
@@ -36,13 +42,13 @@ const Results: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-6">
       <motion.div
         initial={{ y: 0 }}
-        animate={{ y: -50 }}
-        transition={{ duration: 0.5 }}
+        animate={{ y: -30 }}
+        transition={{ duration: 0.7 }}
       >
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8">
+        <form onSubmit={handleSearch} className="flex gap-2 mb-8 max-w-md mx-auto">
           <Input
             type="text"
             placeholder="Enter the product you want a review summary for"
@@ -61,23 +67,25 @@ const Results: React.FC = () => {
         {results.map((product, index) => (
           <motion.div
             key={product.id}
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
           >
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">{product.price}</p>
-                <div className="flex items-center mb-2">
-                  <StarIcon className="w-5 h-5 text-yellow-400 mr-1" />
-                  <span className="font-medium text-gray-900">{product.rating}</span>
-                  <span className="text-gray-600 ml-2">({product.reviews} reviews)</span>
-                </div>
-              </CardContent>
-            </Card>
+            <Link to={`/insights/${product.id}`}>
+              <Card className="hover:shadow-lg transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle>{product.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 mb-2">{product.price}</p>
+                  <div className="flex items-center mb-2">
+                    <StarIcon className="w-5 h-5 text-yellow-400 mr-1" />
+                    <span className="font-medium text-gray-900">{product.rating}</span>
+                    <span className="text-gray-600 ml-2">({product.reviews} reviews)</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           </motion.div>
         ))}
       </div>
