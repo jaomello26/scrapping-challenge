@@ -1,89 +1,270 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useParams } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { StarIcon } from "@radix-ui/react-icons"
+import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select"
 
-// Mock data for demonstration
-const mockResults = [
-  { id: 1, name: 'Product 1', price: '$19.99', rating: 4.5, reviews: 1234 },
-  { id: 2, name: 'Product 2', price: '$29.99', rating: 3.8, reviews: 567 },
-  { id: 3, name: 'Product 3', price: '$39.99', rating: 4.2, reviews: 890 },
-]
+interface KeyPhrase {
+  phrase: string
+  frequency: number
+  sentiment: number
+  review_indices: number[]
+}
 
-const Results: React.FC = () => {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [results, setResults] = useState(mockResults)
+interface Review {
+  rating: number
+  author_name: string
+  review_header: string
+  review_text: string
+  helpful_count: number
+  review_posted_date: string
+  review_country: string
+  is_verified: boolean
+}
+
+interface ProductInfo {
+  url: string
+  name: string
+  overall_rating: number
+  total_reviews: number
+  rating_distribution: {
+    one_star: number
+    two_star: number
+    three_star: number
+    four_star: number
+    five_star: number
+  }
+  brand: string
+}
+
+interface ProductData {
+  product_info: ProductInfo
+  key_phrases: {
+    positive: KeyPhrase[]
+    negative: KeyPhrase[]
+  }
+  reviews: Review[]
+}
+
+const Insights: React.FC = () => {
+  const { productId } = useParams()
+  const [productData, setProductData] = useState<ProductData | null>(null)
+  const [filteredReviews, setFilteredReviews] = useState<Review[]>([])
+  const [selectedRating, setSelectedRating] = useState<string>('all')
+  const [selectedSentiment, setSelectedSentiment] = useState<'all' | 'positive' | 'negative'>('all')
+  const [selectedPhrase, setSelectedPhrase] = useState<string | null>(null)
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    const q = searchParams.get('q')
-    if (q) {
-      setSearchTerm(q)
-      // Here you would typically fetch results based on the search term
-      // For now, we'll just use the mock data
-      setResults(mockResults)
+    // TODO: Replace with actual API call
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/enhanced_formatted_data.json')
+        const data = await response.json()
+        setProductData(data)
+        setFilteredReviews(data.reviews)
+      } catch (error) {
+        console.error('Error fetching product data:', error)
+      }
     }
-  }, [location.search])
+    fetchData()
+  }, [productId])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    navigate(`/results?q=${encodeURIComponent(searchTerm)}`)
+  const filterReviews = () => {
+    if (!productData) return
+
+    let filtered = [...productData.reviews]
+
+    // Filter by rating
+    if (selectedRating !== 'all') {
+      filtered = filtered.filter(review => review.rating === parseInt(selectedRating))
+    }
+
+    // Filter by phrase
+    if (selectedPhrase) {
+      const phraseData = [
+        ...productData.key_phrases.positive,
+        ...productData.key_phrases.negative
+      ].find(p => p.phrase === selectedPhrase)
+
+      if (phraseData) {
+        filtered = filtered.filter((_, index) => 
+          phraseData.review_indices.includes(index)
+        )
+      }
+    }
+
+    setFilteredReviews(filtered)
+  }
+
+  useEffect(() => {
+    filterReviews()
+  }, [selectedRating, selectedPhrase, selectedSentiment])
+
+  if (!productData) {
+    return <div>Loading...</div>
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ y: 0 }}
-        animate={{ y: -50 }}
-        transition={{ duration: 0.5 }}
-      >
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8">
-          <Input
-            type="text"
-            placeholder="Enter the product you want a review summary for"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit" className="bg-yellow-400 hover:bg-yellow-500 text-gray-900">
-            Search
-          </Button>
-        </form>
-      </motion.div>
-
-      <h1 className="text-3xl font-bold text-gray-900">Results for "{searchTerm}"</h1>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {results.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-2">{product.price}</p>
-                <div className="flex items-center mb-2">
-                  <StarIcon className="w-5 h-5 text-yellow-400 mr-1" />
-                  <span className="font-medium text-gray-900">{product.rating}</span>
-                  <span className="text-gray-600 ml-2">({product.reviews} reviews)</span>
+    <div className="container mx-auto p-6">
+      <div className="flex gap-6">
+        {/* Left Column - Filters and Stats */}
+        <div className="w-1/4 space-y-6">
+          {/* Product Info Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{productData.product_info.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-lg font-semibold">
+                    {productData.product_info.overall_rating} / 5
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Based on {productData.product_info.total_reviews} reviews
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+                
+                {/* Rating Distribution */}
+                <div className="space-y-2">
+                  {Object.entries(productData.product_info.rating_distribution)
+                    .reverse()
+                    .map(([rating, count]) => (
+                      <div key={rating} className="flex items-center gap-2">
+                        <span className="w-16">{rating.replace('_', ' ')}</span>
+                        <div className="flex-1 h-2 bg-gray-200 rounded">
+                          <div
+                            className="h-full bg-yellow-400 rounded"
+                            style={{
+                              width: `${(count / productData.product_info.total_reviews) * 100}%`
+                            }}
+                          />
+                        </div>
+                        <span className="w-12 text-sm text-right">{count}</span>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Rating Filter */}
+                <Select
+                  value={selectedRating}
+                  onValueChange={setSelectedRating}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by rating" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Ratings</SelectItem>
+                    {[5, 4, 3, 2, 1].map(rating => (
+                      <SelectItem key={rating} value={rating.toString()}>
+                        {rating} Stars
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Key Phrases Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Key Phrases</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Positive</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {productData.key_phrases.positive.map((phrase) => (
+                      <Badge
+                        key={phrase.phrase}
+                        variant="secondary"
+                        className={`cursor-pointer ${
+                          selectedPhrase === phrase.phrase ? 'bg-green-100' : ''
+                        }`}
+                        onClick={() => setSelectedPhrase(
+                          selectedPhrase === phrase.phrase ? null : phrase.phrase
+                        )}
+                      >
+                        {phrase.phrase} ({phrase.frequency})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Negative</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {productData.key_phrases.negative.map((phrase) => (
+                      <Badge
+                        key={phrase.phrase}
+                        variant="secondary"
+                        className={`cursor-pointer ${
+                          selectedPhrase === phrase.phrase ? 'bg-red-100' : ''
+                        }`}
+                        onClick={() => setSelectedPhrase(
+                          selectedPhrase === phrase.phrase ? null : phrase.phrase
+                        )}
+                      >
+                        {phrase.phrase} ({phrase.frequency})
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Reviews */}
+        <div className="w-3/4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Reviews</CardTitle>
+              <span className="text-sm text-gray-500">
+                Showing {filteredReviews.length} reviews
+              </span>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {filteredReviews.map((review, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold">{review.review_header}</h4>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <span>{review.author_name}</span>
+                            <span>•</span>
+                            <span>{review.rating} stars</span>
+                            <span>•</span>
+                            <span>{review.review_posted_date}</span>
+                          </div>
+                        </div>
+                        {review.helpful_count > 0 && (
+                          <Badge variant="outline">
+                            {review.helpful_count} found helpful
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-2">{review.review_text}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
 }
 
-export default Results
-
+export default Insights

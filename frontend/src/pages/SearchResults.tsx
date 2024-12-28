@@ -119,10 +119,18 @@ const Results: React.FC = () => {
               </div>
               <p className="text-sm text-gray-500">{product.brand}</p>
             </CardContent>
-            <CardFooter>
+            <CardFooter >
+              <div className="flex items-center gap-2">
+              <a href={`/insights/${product.id}`}>
+                <Button className='w-full bg-yellow text-black'>View Reviews</Button>
+              </a>
+            
               <a href={product.url} target="_blank" rel="noopener noreferrer">
                 <Button className="w-full">View on Amazon</Button>
+                
               </a>
+
+              </div>
             </CardFooter>
           </Card>
         ))}
